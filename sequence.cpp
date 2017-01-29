@@ -25,8 +25,13 @@ struct SequenceReader {
 
 	void read() {
 		if (count == 0) return;
-		for (const auto & c : std::to_string(count))
-			dest(c);
+		if (count < 10) {
+			dest((char)(count + '0'));
+		} else {
+			// Does this case ever happen?
+			for (const auto & c : std::to_string(count))
+				dest(c);
+		}
 		dest(last);
 	}
 };
