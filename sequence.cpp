@@ -3,9 +3,15 @@
 #include <functional>
 #include <vector>
 #include <sstream>
+#include <algorithm>
 
 constexpr char terminal = 0;
 
+/* Sequence Reader
+   Sequence reader reads a sequence and push the characters generated
+   from the reading. Reader receives each character at a time, and whenever
+   it can say a part of the sequence, it reads the part. 
+*/
 struct SequenceReader {
 	char last;
 	size_t count;
@@ -37,6 +43,8 @@ struct SequenceReader {
 	}
 };
 
+/* SequencePrinter
+   Simply print pushed item */
 struct SequencePrinter {
 	std::function<void()> terminate;
 
@@ -46,24 +54,40 @@ struct SequencePrinter {
 	}
 };
 
+/* Picker
+   print the characters at the given indices (1 base) */ 
 struct Picker {
-	size_t M;
+	std::vector<size_t> M;
+	size_t idx;
 	std::function<void()> terminate;
 
 	Picker() = delete;
-	Picker(size_t M) : M(M) {}
+	Picker(const std::vector<size_t> & M) 
+		: M(M) {
+		std::sort(this->M.begin(), this->M.end(), std::greater<size_t>());
+		idx = 0;
+	}
 
 	void push(char next) {
-		if (M == 0) return;
-		--M;
-		if (M != 0) return;
-		std::cout << next << std::endl;
-		terminate();
+		if (M.empty())
+			terminate();
+		if (next == terminal) {
+			std::reverse(M.begin(), M.end());
+			std::cout << "Sequence is too short to find [ ";
+			for (const auto i : M) std::cout << i << " ";
+			std::cout << "] th character(s)." << std::endl;
+			terminate();
+		}
+
+		++idx;
+		if (idx != M.back()) return;
+		std::cout << M.back() << ": " << next << std::endl;
+		M.pop_back();
 	}
 };
 
-/* First version of solving look and say sequence */
-/* As it uses call stack, N is limited by stack size */
+/* First version of solving look and say sequence 
+   As it uses call stack, N is limited by stack size */
 template <typename End>
 class Solver1 {
 public:
@@ -100,8 +124,8 @@ private:
 	End end;
 };
 
-/* Second version of solving look and say sequence */
-/* It stores events in heap to get round stack problem in version 1 */
+/* Second version of solving look and say sequence
+   It stores events in heap to get round stack problem in version 1 */
 template <typename End>
 class Solver2 {
 public:
@@ -173,30 +197,36 @@ private:
 	EventContainer events;
 };
 
-std::pair<size_t, size_t> getInput() {
-	std::cout << "Input format: N   - to obtain N'th complete sequence." << std::endl;
-	std::cout << "              N M - to obtain M'th character of N'th sequence." << std::endl;
+std::pair<size_t, std::vector<size_t>> getInput() {
+	std::cout << "Input format: N         - to obtain the N'th complete sequence." << std::endl;
+	std::cout << "              N [Mi...] - to obtain the Mi'th characters of the N'th sequence." << std::endl;
 	std::string input;
 	std::getline(std::cin, input);
-	size_t N=0, M=0;
+	input.erase(input.find_last_not_of(" \n\r\t")+1);
+
+	size_t N=0;
+	std::vector<size_t> M(0);
 	std::stringstream ss(input);
-	if (input.find(" ") != std::string::npos) {
-		ss >> N >> M;
-	} else {
-		ss >> N;
+	ss >> N;
+	while(!ss.eof()) {
+		size_t m;
+		ss >> m;
+		M.push_back(m);
 	}
 	return {N, M};
 }
 
 int main(int argc, const char *argv[])
 {
-	size_t N, M;
+	size_t N;
+	std::vector<size_t> M;
 	std::tie(N, M) = getInput();
-
+	
 	if (N < 10000) {
 		// Solver1 cannot solve large N becase of stack size
-		std::cout << "Version 1: ";
-		if (M != 0) {
+		std::cout << std::endl;
+		std::cout << "<Version 1>" << std::endl;
+		if (!M.empty()) {
 			Solver1<Picker> solver(N, Picker(M));
 			solver.go();
 		} else {
@@ -205,8 +235,9 @@ int main(int argc, const char *argv[])
 		}
 	}
 
-	std::cout << "Version 2: ";
-	if (M != 0) {
+	std::cout << std::endl;
+	std::cout << "<Version 2>" << std::endl;
+	if (!M.empty()) {
 		Solver2<Picker> solver(N, Picker(M));
 		solver.go();
 	} else {
