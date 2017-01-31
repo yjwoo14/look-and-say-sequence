@@ -8,8 +8,8 @@
 
 constexpr char terminal = 0;
 
-/* Sequence Reader
-   Sequence reader reads a sequence and push the characters generated
+/* Reader
+   Reader reads a sequence and push the characters generated
    from the reading. Reader receives each character at a time, and whenever
    it can say a part of the sequence, it reads the part. 
 */
@@ -79,7 +79,7 @@ struct Picker {
 	void finish() {
 		if (!M.empty()) {
 			std::reverse(M.begin(), M.end());
-			std::cout << "Sequence is too short to find [ ";
+			std::cout << "The number is too short to find [ ";
 			for (const auto i : M) std::cout << i << " ";
 			std::cout << "] th character(s)." << std::endl;
 		}
@@ -87,9 +87,9 @@ struct Picker {
 	}
 };
 
-/* SequenceLengthPrinter
+/* LengthPrinter
    print length of the sequence */
-struct SequenceLengthPrinter {
+struct LengthPrinter {
 	size_t length = 0;
 	std::function<void()> terminate;
 	void push(char next) { 
@@ -247,7 +247,7 @@ if (N != 0 && !M.empty()) { \
 	Solver<Printer> solver(N); \
 	solver.go(); \
 } else if (!M.empty()) { \
-	Solver<SequenceLengthPrinter> solver(M.front()); \
+	Solver<LengthPrinter> solver(M.front()); \
 	solver.go(); \
 }
 
