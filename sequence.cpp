@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <algorithm>
+#include <limits>
 
 constexpr char terminal = 0;
 
@@ -12,12 +13,11 @@ constexpr char terminal = 0;
    from the reading. Reader receives each character at a time, and whenever
    it can say a part of the sequence, it reads the part. 
 */
-struct SequenceReader {
-	char last;
-	size_t count;
+struct Reader {
+	char last = 0;
+	size_t count = 0;
 	std::function<void(char)> dest;
 
-	SequenceReader(): last(0), count(0) {}
 	void push(char next) {
 		if (last == next) {
 			count++;
@@ -43,9 +43,9 @@ struct SequenceReader {
 	}
 };
 
-/* SequencePrinter
+/* Printer
    Simply print pushed item */
-struct SequencePrinter {
+struct Printer {
 	std::function<void()> terminate;
 
 	void push(char next) {
@@ -58,14 +58,13 @@ struct SequencePrinter {
    print the characters at the given indices (1 base) */ 
 struct Picker {
 	std::vector<size_t> M;
-	size_t idx;
+	size_t idx = 0;
 	std::function<void()> terminate;
 
 	Picker() = delete;
 	Picker(const std::vector<size_t> & M) 
 		: M(M) {
 		std::sort(this->M.begin(), this->M.end(), std::greater<size_t>());
-		idx = 0;
 	}
 
 	void push(char next) {
@@ -88,6 +87,22 @@ struct Picker {
 	}
 };
 
+/* SequenceLengthPrinter
+   print length of the sequence */
+struct SequenceLengthPrinter {
+	size_t length = 0;
+	std::function<void()> terminate;
+	void push(char next) { 
+		if (next == terminal) {
+			std::cout << "Length: " << length << std::endl;
+			return;
+		}
+		length++;
+		if (length == std::numeric_limits<size_t>::max()) 
+			throw std::runtime_error("Cannot represent the length of the sequence in size_t type");
+	}
+};
+
 /* First version of solving look and say sequence 
    As it uses call stack, N is limited by stack size */
 template <typename End>
@@ -103,9 +118,9 @@ public:
 			return;
 		}
 
-		start = std::bind(&SequenceReader::push, &readers[0], std::placeholders::_1);
+		start = std::bind(&Reader::push, &readers[0], std::placeholders::_1);
 		for (size_t i = 0 ; i + 1 < readers.size() ; ++i)
-			readers[i].dest = std::bind(&SequenceReader::push, &readers[i+1], std::placeholders::_1);
+			readers[i].dest = std::bind(&Reader::push, &readers[i+1], std::placeholders::_1);
 		readers.back().dest = std::bind(&End::push, &this->end, std::placeholders::_1);
 	}
 
@@ -122,7 +137,7 @@ public:
 
 private:
 	std::function<void(char)> start;
-	std::vector<SequenceReader> readers;
+	std::vector<Reader> readers;
 	End end;
 };
 
@@ -199,7 +214,7 @@ public:
 	}
 
 private:
-	std::vector<SequenceReader> readers;
+	std::vector<Reader> readers;
 	End end;
 	EventContainer events;
 };
@@ -207,6 +222,7 @@ private:
 std::pair<size_t, std::vector<size_t>> getInput() {
 	std::cout << "Input format: N         - to print the N'th complete sequence." << std::endl;
 	std::cout << "              N [Mi...] - to print the Mi'th characters of the N'th sequence." << std::endl;
+	std::cout << "              0 N       - to print the length of the N'th sequence." << std::endl;
 	std::string input;
 	std::getline(std::cin, input);
 	input.erase(input.find_last_not_of(" \n\r\t")+1);
@@ -223,6 +239,18 @@ std::pair<size_t, std::vector<size_t>> getInput() {
 	return {N, M};
 }
 
+#define solve(Solver) \
+if (N != 0 && !M.empty()) { \
+	Solver<Picker> solver(N, Picker(M)); \
+	solver.go(); \
+} else if (N != 0) { \
+	Solver<Printer> solver(N); \
+	solver.go(); \
+} else if (!M.empty()) { \
+	Solver<SequenceLengthPrinter> solver(M.front()); \
+	solver.go(); \
+}
+
 int main(int argc, const char *argv[])
 {
 	size_t N;
@@ -233,23 +261,11 @@ int main(int argc, const char *argv[])
 		// Solver1 cannot solve large N becase of stack size
 		std::cout << std::endl;
 		std::cout << "<Version 1>" << std::endl;
-		if (!M.empty()) {
-			Solver1<Picker> solver(N, Picker(M));
-			solver.go();
-		} else {
-			Solver1<SequencePrinter> solver(N);
-			solver.go();
-		}
+		solve(Solver1);
 	}
 
 	std::cout << std::endl;
 	std::cout << "<Version 2>" << std::endl;
-	if (!M.empty()) {
-		Solver2<Picker> solver(N, Picker(M));
-		solver.go();
-	} else {
-		Solver2<SequencePrinter> solver(N);
-		solver.go();
-	}
+	solve(Solver2);
 	return 0;
 }
