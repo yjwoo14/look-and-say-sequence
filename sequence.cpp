@@ -69,20 +69,22 @@ struct Picker {
 	}
 
 	void push(char next) {
-		if (M.empty())
-			terminate();
-		if (next == terminal) {
-			std::reverse(M.begin(), M.end());
-			std::cout << "Sequence is too short to find [ ";
-			for (const auto i : M) std::cout << i << " ";
-			std::cout << "] th character(s)." << std::endl;
-			terminate();
-		}
-
+		if (M.empty() || next == terminal)
+			finish();
 		++idx;
 		if (idx != M.back()) return;
 		std::cout << M.back() << ": " << next << std::endl;
 		M.pop_back();
+	}
+
+	void finish() {
+		if (!M.empty()) {
+			std::reverse(M.begin(), M.end());
+			std::cout << "Sequence is too short to find [ ";
+			for (const auto i : M) std::cout << i << " ";
+			std::cout << "] th character(s)." << std::endl;
+		}
+		terminate();
 	}
 };
 
@@ -142,8 +144,7 @@ public:
 			events.push_back(Event{target, item});
 			// reorder
 			auto bit = events.rbegin();
-			for (auto it = events.rbegin(); it != events.rend(); ++it) {
-				if (it == events.rbegin()) continue;
+			for (auto it = std::next(events.rbegin()); it != events.rend(); ++it) {
 				if (it->target != target) break;
 				std::swap(*bit, *it);
 				bit = it;
