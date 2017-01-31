@@ -161,6 +161,9 @@ public:
 		void clear() {
 			events.clear();
 		}
+		size_t capacity() const {
+			return events.capacity();
+		}
 	};
 
 	Solver2() = delete;
@@ -190,6 +193,9 @@ public:
 
 	void terminate() {
 		events.clear();
+		std::cerr << "Event container capacity: " << events.capacity()
+		          << " items (" << events.capacity() * sizeof(Event)
+		          << " bytes)." << std::endl;
 	}
 
 private:
@@ -199,8 +205,8 @@ private:
 };
 
 std::pair<size_t, std::vector<size_t>> getInput() {
-	std::cout << "Input format: N         - to obtain the N'th complete sequence." << std::endl;
-	std::cout << "              N [Mi...] - to obtain the Mi'th characters of the N'th sequence." << std::endl;
+	std::cout << "Input format: N         - to print the N'th complete sequence." << std::endl;
+	std::cout << "              N [Mi...] - to print the Mi'th characters of the N'th sequence." << std::endl;
 	std::string input;
 	std::getline(std::cin, input);
 	input.erase(input.find_last_not_of(" \n\r\t")+1);
