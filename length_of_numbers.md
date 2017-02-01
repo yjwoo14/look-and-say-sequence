@@ -1,3 +1,4 @@
+# Length of the numbers in the sequence.
 |N|Length|
 |:---:|:---:|
 |1|1|
