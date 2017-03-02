@@ -26,18 +26,16 @@ call_type ant(int n, char &ret) {
 		auto yields = [&](){ ret = count; yield(); ret = prev ; yield(); };
 		while (true) {
 			gen();
-			if (next == terminate) {
-				yields();
-				ret = terminate;
-				yield();
-				return;
-			}
 			if (next == prev) {
 				count++;
 				continue;
 			}
 			if (count != '0') 
 				yields();
+			if (next == terminate) {
+				ret = terminate;
+				return;
+			}
 			prev = next;
 			count = '1';
 		}
